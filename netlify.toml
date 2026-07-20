@@ -1,0 +1,3 @@
+# SIG Lodges (hut.rip) — deploys to hut.rip. Static, no build: publish the repo root.
+[build]
+  publish = "."
