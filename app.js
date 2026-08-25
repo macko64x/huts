@@ -5,7 +5,14 @@
   /* =====================================================================
      CONFIG (edit these — no code changes needed)
      ===================================================================== */
-  var RESERVATIONS_EMAIL = "losttraillodgetruckee@gmail.com";
+  /* Reservations inboxes — one per lodge. The inquiry form and the request-to-book
+     fallback go to the lodge the guest picked; "Either / not sure" reaches both.
+     Page links ("or email …", footer) use the page's own lodge, declared with
+     data-site-lodge on <body>; pages covering both lodges leave it off. */
+  var LODGE_EMAILS = {
+    "Lost Trail Lodge": "losttraillodgetruckee@gmail.com",
+    "Thelma Hut":       "redmtnthelma@gmail.com"
+  };
   var WHATSAPP_NUMBER = "";          // digits only, country code first. "" hides the button.
   var FORM_ENDPOINT = "";            // POST URL (Formspree/HubSpot). "" → prefilled email fallback.
 
@@ -59,6 +66,15 @@
   var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
   function isAlpine() { return document.body.classList.contains("theme-alpine"); }
 
+  /* Inboxes for a lodge name. Unknown, blank or "Either / not sure" → all of them. */
+  function lodgeEmails(lodge) {
+    var one = LODGE_EMAILS[lodge];
+    if (one) return [one];
+    return Object.keys(LODGE_EMAILS).map(function (k) { return LODGE_EMAILS[k]; });
+  }
+  function mailTo(lodge) { return lodgeEmails(lodge).join(","); }
+  var SITE_LODGE = document.body.getAttribute("data-site-lodge") || "";
+
   /* Re-run <script> tags inside injected HTML (embeds often include them). */
   function runScripts(container) {
     $$("script", container).forEach(function (old) {
@@ -111,8 +127,8 @@
     waBtn.style.display = "none";
   }
   var emailLink = $("#emailLink"), footerEmail = $("#footerEmail");
-  var mailHref = "mailto:" + RESERVATIONS_EMAIL + "?subject=" + encodeURIComponent("SIG Lodges — inquiry");
-  if (emailLink) { emailLink.textContent = RESERVATIONS_EMAIL; emailLink.href = mailHref; }
+  var mailHref = "mailto:" + mailTo(SITE_LODGE) + "?subject=" + encodeURIComponent("SIG Lodges — inquiry");
+  if (emailLink) { emailLink.textContent = lodgeEmails(SITE_LODGE).join(" or "); emailLink.href = mailHref; }
   if (footerEmail) { footerEmail.href = mailHref; }
 
   /* ---- Reviews carousel ---- */
@@ -205,7 +221,7 @@
       var ci = $("[data-bf=in]", wrap).value, co = $("[data-bf=out]", wrap).value, g = $("[data-bf=guests]", wrap).value;
       var lines = ["Booking request from the SIG Lodges site.", "", "Lodge: " + name,
         "Check-in: " + (ci || "—"), "Check-out: " + (co || "—"), "Guests: " + (g || "—")];
-      window.location.href = "mailto:" + RESERVATIONS_EMAIL +
+      window.location.href = "mailto:" + mailTo(name) +
         "?subject=" + encodeURIComponent("Booking request — " + name) +
         "&body=" + encodeURIComponent(lines.join("\n"));
     });
@@ -311,7 +327,7 @@
       "Trip type: " + (d.triptype || "—"), "Dates: " + (d.dates || "—"),
       "Group size: " + (d.group || "—"), "", "Message:", d.message || "—"
     ];
-    return "mailto:" + RESERVATIONS_EMAIL +
+    return "mailto:" + mailTo(d.lodge) +
       "?subject=" + encodeURIComponent("Booking inquiry — " + d.name + " (" + d.lodge + ")") +
       "&body=" + encodeURIComponent(lines.join("\n"));
   }
