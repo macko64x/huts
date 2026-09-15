@@ -5,14 +5,20 @@
   /* =====================================================================
      CONFIG (edit these — no code changes needed)
      ===================================================================== */
-  /* Reservations inboxes — one per lodge. The inquiry form and the request-to-book
-     fallback go to the lodge the guest picked; "Either / not sure" reaches both.
-     Page links ("or email …", footer) use the page's own lodge, declared with
-     data-site-lodge on <body>; pages covering both lodges leave it off. */
+  /* Reservations inboxes — one per lodge, plus the SIG Lodges umbrella inbox.
+     On a lodge site the inquiry form and the request-to-book fallback go to the
+     lodge the guest picked, and "Either / not sure" reaches both lodges.
+     Two <body> attributes steer it:
+       data-site-lodge — whose inbox this page's own links use ("or email …", footer)
+       data-site-inbox — if set, EVERY form inquiry on this site goes here instead
+                         of the picked lodge. hut.rip uses it so umbrella inquiries
+                         land with SIG rather than a single lodge; the picked lodge
+                         is still named in the message body. */
   var LODGE_EMAILS = {
     "Lost Trail Lodge": "losttraillodgetruckee@gmail.com",
     "Thelma Hut":       "redmtnthelma@gmail.com"
   };
+  var SIG_EMAIL = "siglodges@gmail.com";   // hut.rip — the SIG Lodges umbrella inbox
   var WHATSAPP_NUMBER = "";          // digits only, country code first. "" hides the button.
   var FORM_ENDPOINT = "";            // POST URL (Formspree/HubSpot). "" → prefilled email fallback.
 
@@ -66,14 +72,17 @@
   var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
   function isAlpine() { return document.body.classList.contains("theme-alpine"); }
 
-  /* Inboxes for a lodge name. Unknown, blank or "Either / not sure" → all of them. */
-  function lodgeEmails(lodge) {
-    var one = LODGE_EMAILS[lodge];
+  /* Inboxes for a name. "SIG Lodges" is the umbrella inbox; a lodge name is its
+     own; unknown, blank or "Either / not sure" reaches both lodges. */
+  function lodgeEmails(name) {
+    if (name === "SIG Lodges") return [SIG_EMAIL];
+    var one = LODGE_EMAILS[name];
     if (one) return [one];
     return Object.keys(LODGE_EMAILS).map(function (k) { return LODGE_EMAILS[k]; });
   }
-  function mailTo(lodge) { return lodgeEmails(lodge).join(","); }
+  function mailTo(name) { return lodgeEmails(name).join(","); }
   var SITE_LODGE = document.body.getAttribute("data-site-lodge") || "";
+  var SITE_INBOX = document.body.getAttribute("data-site-inbox") || "";
 
   /* Re-run <script> tags inside injected HTML (embeds often include them). */
   function runScripts(container) {
@@ -221,7 +230,7 @@
       var ci = $("[data-bf=in]", wrap).value, co = $("[data-bf=out]", wrap).value, g = $("[data-bf=guests]", wrap).value;
       var lines = ["Booking request from the SIG Lodges site.", "", "Lodge: " + name,
         "Check-in: " + (ci || "—"), "Check-out: " + (co || "—"), "Guests: " + (g || "—")];
-      window.location.href = "mailto:" + mailTo(name) +
+      window.location.href = "mailto:" + mailTo(SITE_INBOX || name) +
         "?subject=" + encodeURIComponent("Booking request — " + name) +
         "&body=" + encodeURIComponent(lines.join("\n"));
     });
@@ -327,7 +336,7 @@
       "Trip type: " + (d.triptype || "—"), "Dates: " + (d.dates || "—"),
       "Group size: " + (d.group || "—"), "", "Message:", d.message || "—"
     ];
-    return "mailto:" + mailTo(d.lodge) +
+    return "mailto:" + mailTo(SITE_INBOX || d.lodge) +
       "?subject=" + encodeURIComponent("Booking inquiry — " + d.name + " (" + d.lodge + ")") +
       "&body=" + encodeURIComponent(lines.join("\n"));
   }
