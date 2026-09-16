@@ -57,6 +57,19 @@
 
   var $ = function (s, c) { return (c || document).querySelector(s); };
   var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
+
+  /* ---- Conversion tracking (GA4) ------------------------------------
+     Every SIG Lodges site reports into one GA4 property so an Instagram
+     visit that lands on hut.rip and books on redmtnthelma.com reads as a
+     single journey. track() is a no-op if gtag is blocked or absent. */
+  function track(name, params) {
+    try { if (typeof window.gtag === "function") window.gtag("event", name, params || {}); } catch (e) {}
+  }
+  function siteLodge() {
+    var m = document.querySelector("[data-lodge]");
+    var k = m && m.getAttribute("data-lodge");
+    return k === "rmp" ? "Thelma Hut" : k === "lt" ? "Lost Trail Lodge" : "SIG Lodges";
+  }
   function isAlpine() { return document.body.classList.contains("theme-alpine"); }
 
   /* Re-run <script> tags inside injected HTML (embeds often include them). */
@@ -107,6 +120,9 @@
       encodeURIComponent("Hi SIG Lodges — I'd like to ask about a stay.");
     if (waBtn) waBtn.href = waHref;
     if (footerWa) { footerWa.href = waHref; footerWa.hidden = false; }
+    [waBtn, footerWa].forEach(function (el) {
+      if (el) el.addEventListener("click", function () { track("whatsapp_click", { lodge: siteLodge() }); });
+    });
   } else if (waBtn) {
     waBtn.style.display = "none";
   }
@@ -114,6 +130,9 @@
   var mailHref = "mailto:" + RESERVATIONS_EMAIL + "?subject=" + encodeURIComponent("SIG Lodges — inquiry");
   if (emailLink) { emailLink.textContent = RESERVATIONS_EMAIL; emailLink.href = mailHref; }
   if (footerEmail) { footerEmail.href = mailHref; }
+  [emailLink, footerEmail].forEach(function (el) {
+    if (el) el.addEventListener("click", function () { track("email_click", { lodge: siteLodge() }); });
+  });
 
   /* ---- Reviews carousel ---- */
   function initCarousel(root) {
@@ -229,6 +248,7 @@
       box.innerHTML = cfg.embedHtml;
       mount.appendChild(box);
       runScripts(box);
+      track("booking_widget_shown", { lodge: name });
       return;
     }
     if (cfg.url) {
@@ -236,6 +256,7 @@
       a.className = "btn " + (isAlpine() ? "btn--alpine" : "btn--solid");
       a.href = cfg.url; a.target = "_blank"; a.rel = "noopener";
       a.textContent = "Check availability & book";
+      a.addEventListener("click", function () { track("book_now_click", { lodge: name }); });
       mount.appendChild(a);
       return;
     }
@@ -326,6 +347,7 @@
         group: $("#group").value.trim(), message: $("#message").value.trim()
       };
       if (!FORM_ENDPOINT) {
+        track("inquiry_submit", { lodge: d.lodge, trip_type: d.triptype || "unspecified", group_size: d.group || "unspecified", method: "mailto" });
         setStatus("Opening your email app to send your inquiry…", "ok");
         window.location.href = buildMailto(d);
         return;
@@ -334,7 +356,7 @@
       var btn = $("button[type=submit]", form);
       if (btn) btn.disabled = true;
       fetch(FORM_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(d) })
-        .then(function (res) { if (!res.ok) throw new Error("bad status"); form.reset(); setStatus("Thanks — your inquiry is in. We'll get back to you personally, soon.", "ok"); })
+        .then(function (res) { if (!res.ok) throw new Error("bad status"); form.reset(); track("inquiry_submit", { lodge: d.lodge, trip_type: d.triptype || "unspecified", group_size: d.group || "unspecified", method: "endpoint" }); setStatus("Thanks — your inquiry is in. We'll get back to you personally, soon.", "ok"); })
         .catch(function () { setStatus("Couldn't submit automatically — opening your email app instead…", "err"); window.location.href = buildMailto(d); })
         .finally(function () { if (btn) btn.disabled = false; });
     });
