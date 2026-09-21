@@ -22,32 +22,32 @@
   var WHATSAPP_NUMBER = "";          // digits only, country code first. "" hides the button.
   var FORM_ENDPOINT = "";            // POST URL (Formspree/HubSpot). "" → prefilled email fallback.
 
-  /* Booking — Lodgify portable search bar (Website builder → External widgets).
-     One widget per website (661257), so there is no per-rental id: Search opens
-     the Lodgify all-properties results page in a new tab. Only the button colour
-     differs per lodge, so the widget matches the page it sits on.
-     To re-theme, edit the colours below; to swap in a newer snippet from Lodgify,
-     replace the markup and keep the ${c.*} substitutions. */
-  function lodgifySearchBar(c) {
-    return `<script src="https://app.lodgify.com/portable-search-bar/stable/renderPortableSearchBar.js" defer></script>
+  /* Booking — Lodgify. Paste each property's booking widget/page from Lodgify.
+     Until set, a "request to book" date form (→ email) is shown automatically.
+       embedHtml : the full embed snippet Lodgify gives you (iframe/script)  — preferred
+       url       : a hosted Lodgify booking page to link out to               — simplest */
+  /* Lodgify "Book Now" box — same widget for both rentals; only the rental id differs.
+     To swap in a new snippet later, just change the rental id (or replace embedHtml). */
+  function lodgifyBox(rentalId, c) {
+    return `<script src="https://app.lodgify.com/book-now-box/stable/renderBookNowBox.js" defer></script>
 <style>
   :root{
-    --ldg-psb-background:#ffffff;--ldg-psb-border-radius:0.42em;
-    --ldg-psb-box-shadow:0px 24px 54px 0px rgba(0,0,0,0.1);--ldg-psb-padding:14px;
-    --ldg-psb-input-background:#ffffff;--ldg-psb-button-border-radius:3.58em;
-    --ldg-psb-color-primary:${c.primary};--ldg-psb-color-primary-lighter:${c.lighter};
-    --ldg-psb-color-primary-darker:${c.darker};--ldg-psb-color-primary-contrast:#ffffff;
-    --ldg-semantic-color-primary:${c.primary};--ldg-semantic-color-primary-lighter:${c.lighter};
-    --ldg-semantic-color-primary-darker:${c.darker};--ldg-semantic-color-primary-contrast:#ffffff;
-    --ldg-component-modal-z-index:999;
+    --ldg-bnb-background:#ffffff;--ldg-bnb-border-radius:0.42em;
+    --ldg-bnb-box-shadow:0px 24px 54px 0px rgba(0,0,0,0.1);--ldg-bnb-padding:14px;
+    --ldg-bnb-input-background:#ffffff;--ldg-bnb-button-border-radius:3.58em;
+    --ldg-bnb-color-primary:${c.primary};--ldg-bnb-color-primary-lighter:${c.lighter};
+    --ldg-bnb-color-primary-darker:${c.darker};--ldg-bnb-color-primary-contrast:#ffffff;
+    --ldg-component-calendar-cell-selection-bg-color:${c.primary};--ldg-component-calendar-cell-selection-color:#ffffff;
+    --ldg-component-calendar-cell-selected-bg-color:${c.tint};--ldg-component-calendar-cell-selected-color:#14160f;
+    --ldg-bnb-font-family:inherit;
   }
-  #lodgify-search-bar{width:100%;}
+  #lodgify-book-now-box{width:100%;}
 </style>
-<div id="lodgify-search-bar" data-website-id="661257" data-language-code="en" data-search-page-url='https://siglodges.lodgify.com/en/all-properties' data-dates-check-in-label='Check-in' data-dates-check-out-label='Check-out' data-guests-counter-label='Guests' data-guests-input-singular-label='{{NumberOfGuests}} guest' data-guests-input-plural-label='{{NumberOfGuests}} guests' data-location-input-label='Location' data-search-button-label='Search' data-dates-input-min-stay-tooltip-text='{"one":"Minimum {minStay} night","other":"Minimum {minStay} nights"}' data-guests-breakdown-label='Guests' data-adults-label='{"one":"adult","other":"adults"}' data-adults-description='Ages {minAge} or above' data-children-label='{"one":"child","other":"children"}' data-children-description='Ages {minAge}-{maxAge}' data-children-not-allowed-label='Not suitable for children' data-infants-label='{"one":"infant","other":"infants"}' data-infants-description='Under {maxAge}' data-infants-not-allowed-label='Not suitable for infants' data-pets-label='{"one":"pet","other":"pets"}' data-pets-not-allowed-label='Not allowed' data-done-label='Done' data-new-tab="true" data-version="stable" data-has-guests-breakdown></div>`;
+<div id="lodgify-book-now-box" data-rental-id="${rentalId}" data-website-id="661257" data-slug="siglodges" data-language-code="en" data-new-tab="true" data-version="stable" data-has-guests-breakdown data-check-in-label='Check-in' data-check-out-label='Check-out' data-guests-label='Guests' data-guests-singular-label='{{NumberOfGuests}} guest' data-guests-plural-label='{{NumberOfGuests}} guests' data-location-input-label='Location' data-total-price-label='Total price:' data-select-dates-to-see-price-label='Select dates to see total price' data-minimum-price-per-night-first-label='From' data-minimum-price-per-night-second-label='per night' data-book-button-label='Book Now' data-guests-breakdown-label='Guests' data-adults-label='{"one":"adult","other":"adults"}' data-adults-description='Ages {minAge} or above' data-children-label='{"one":"child","other":"children"}' data-children-description='Ages {minAge}-{maxAge}' data-children-not-allowed-label='Not suitable for children' data-infants-label='{"one":"infant","other":"infants"}' data-infants-description='Under {maxAge}' data-infants-not-allowed-label='Not suitable for infants' data-pets-label='{"one":"pet","other":"pets"}' data-pets-not-allowed-label='Not allowed' data-done-label='Done'></div>`;
   }
   var LODGIFY = {
-    lt:  { name: "Lost Trail Lodge", url: "", embedHtml: lodgifySearchBar({primary:"#1f4d3a", lighter:"#2e6b4f", darker:"#163a2b"}) },
-    rmp: { name: "Thelma Hut",       url: "", embedHtml: lodgifySearchBar({primary:"#294a6b", lighter:"#3d6491", darker:"#1d3a52"}) }
+    lt:  { name: "Lost Trail Lodge", url: "", embedHtml: lodgifyBox("817933", {primary:"#1f4d3a", lighter:"#2e6b4f", darker:"#163a2b", tint:"#d6e7dd"}) },
+    rmp: { name: "Thelma Hut",       url: "", embedHtml: lodgifyBox("818364", {primary:"#294a6b", lighter:"#3d6491", darker:"#1d3a52", tint:"#d8e2ee"}) }
   };
 
   /* Instagram — set the handle (no @). For a LIVE auto-updating feed, add a
