@@ -213,7 +213,7 @@
   $$("[data-carousel]").forEach(initCarousel);
 
   /* ---- Booking (Lodgify embed, or request-to-book fallback) ---- */
-  function buildRequestToBook(name) {
+  function buildRequestToBook(name, why) {
     var wrap = document.createElement("div");
     wrap.className = "booking-fallback";
     wrap.innerHTML =
@@ -237,9 +237,25 @@
     wrap.appendChild(btn);
     var note = document.createElement("p");
     note.className = "booking-fallback__note";
-    note.innerHTML = 'Live instant-book is coming online. For now we confirm every booking personally — or <a href="#inquire">send a full inquiry</a>.';
+    note.innerHTML = why === "failed"
+      ? 'Our live booking calendar didn\u2019t load. Send your dates and we\u2019ll confirm personally — or <a href="#inquire">send a full inquiry</a>.'
+      : 'Live instant-book is coming online. For now we confirm every booking personally — or <a href="#inquire">send a full inquiry</a>.';
     wrap.appendChild(note);
     return wrap;
+  }
+
+  /* Lodgify renders its calendar into #lodgify-book-now-box. If that never
+     happens — script blocked by an ad blocker, stale slug or rental id, CDN
+     down — the box just sits there empty and the guest cannot book at all.
+     Watch for it, and swap in the request-to-book form rather than dead-end. */
+  function watchLodgify(box, name) {
+    var deadline = Date.now() + 8000;
+    (function check() {
+      var target = $("#lodgify-book-now-box", box);
+      if (target && target.children.length) return;          // it rendered
+      if (Date.now() < deadline) { setTimeout(check, 400); return; }
+      if (box.parentNode) box.parentNode.replaceChild(buildRequestToBook(name, "failed"), box);
+    })();
   }
 
   (function initBooking() {
@@ -254,6 +270,7 @@
       box.innerHTML = cfg.embedHtml;
       mount.appendChild(box);
       runScripts(box);
+      watchLodgify(box, name);
       return;
     }
     if (cfg.url) {
