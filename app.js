@@ -41,7 +41,7 @@
      Behold.so feed id (behold.so) OR a LightWidget id (lightwidget.com).
      With no feed id, the static photo grid + Follow button stand in. */
   var INSTAGRAM = {
-    handle: "",            // e.g. "siglodges"  ← Matt: drop the handle here
+    handle: "",            // Instagram handle, no @. "" hides the follow/footer links.
     beholdId: "",
     lightwidgetId: ""
   };
@@ -266,19 +266,29 @@
   /* ---- Instagram (live widget, or static grid + follow links) ---- */
   (function initInstagram() {
     var handle = ((INSTAGRAM && INSTAGRAM.handle) || "").replace(/^@/, "");
-    var profileUrl = handle ? "https://instagram.com/" + handle : "https://instagram.com";
+    var profileUrl = handle ? "https://instagram.com/" + handle : "";
 
     var handleEl = $("#igHandle");
     if (handleEl && handle) handleEl.textContent = "@" + handle;
 
     var follow = $("#igFollow");
-    if (follow) { follow.href = profileUrl; if (handle) follow.textContent = "Follow @" + handle; }
+    if (follow) {
+      if (handle) {
+        follow.href = profileUrl;
+        follow.textContent = "Follow @" + handle;
+        follow.addEventListener("click", function () { track("instagram_follow_click", { handle: handle, lodge: siteLodge() }); });
+      } else {
+        /* No handle configured — hide rather than link to instagram.com, which is a dead end. */
+        follow.style.display = "none";
+      }
+    }
 
     var fs = $("#footerSocial");
-    if (fs) {
+    if (fs && handle) {
       var fa = document.createElement("a");
       fa.href = profileUrl; fa.target = "_blank"; fa.rel = "noopener";
-      fa.textContent = handle ? "Instagram · @" + handle : "Instagram";
+      fa.textContent = "Instagram · @" + handle;
+      fa.addEventListener("click", function () { track("instagram_follow_click", { handle: handle, lodge: siteLodge() }); });
       fs.appendChild(fa);
     }
 
